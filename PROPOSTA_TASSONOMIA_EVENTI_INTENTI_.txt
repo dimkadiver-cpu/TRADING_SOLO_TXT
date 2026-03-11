@@ -1,0 +1,677 @@
+PROPOSTA_TASSONOMIA_EVENTI_INTENTI_AZIONI
+========================================
+
+Scopo
+-----
+Definire una tassonomia unica e stabile per:
+
+1) macro eventi del messaggio
+2) intenti semantici
+3) azioni operative
+
+Principio chiave
+----------------
+Separare sempre 3 livelli:
+
+LIVELLO 1: MACRO EVENTO
+- classifica il messaggio nel suo ruolo generale
+
+LIVELLO 2: INTENT
+- descrive cosa il trader intende semanticamente
+
+LIVELLO 3: ACTION
+- descrive cosa il sistema deve fare davvero lato execution / stato
+
+Formula:
+
+MESSAGE -> MACRO_EVENT
+MACRO_EVENT -> INTENT
+INTENT -> ACTION(S)
+
+Questo evita di confondere:
+- "tp1 hit" con "close 50%"
+- "stop hit" con "close all"
+- "cancel limits" con "setup invalidated"
+
+
+======================================================================
+A. MACRO EVENTI
+======================================================================
+
+Proposta elenco completo:
+
+1. NEW_SIGNAL
+   Nuovo setup di trade.
+
+2. UPDATE
+   Aggiornamento operativo su setup/trade esistente.
+
+3. INFO_ONLY
+   Messaggio informativo, commento, market view, warning, note operative non eseguibili.
+		- OTHER
+		- RESULT_REPORT
+
+4. SETUP_INCOMPLETE
+   Sembra un segnale ma mancano dati fondamentali.
+
+7. UNCLASSIFIED
+   Non classificabile in modo affidabile.
+
+Un evento puo contenere diversi intenti e azioni
+
+
+======================================================================
+B. INTENTI PER MACRO EVENTO
+======================================================================
+
+--------------------------------------------------
+B1. INTENTI DI NEW_SIGNAL
+--------------------------------------------------
+
+ NEW_SETUP_COMPLETE
+- nuovo segnale completo
+
+ REENTRY_SIGNAL
+- nuovo ingresso dopo chiusura precedente o re-entry dichiarata
+
+Nota:
+-----
+Molti di questi possono vivere anche come metadata e non come intent separati.
+Versione pratica:
+- NS_CREATE_SIGNAL
+e il resto come subtype / flags.
+
+
+--------------------------------------------------
+B2. INTENTI DI UPDATE
+--------------------------------------------------
+
+Questa è la parte davvero importante.
+
+U_MOVE_STOP
+- modifica stop loss a nuovo livello generico
+
+U_MOVE_STOP_TO_BE
+- stop a breakeven / entry
+
+U_MOVE_STOP_TO_PROFIT
+- stop in profitto / lock profit
+
+U_UPDATE_TAKE_PROFIT_LEVELS
+- modifica lista TP
+
+
+U_CLOSE_PARTIAL
+- chiudere parte posizione
+
+U_CLOSE_FULL
+- chiudere tutta la posizione
+
+
+
+U_CANCEL_PENDING_ORDERS
+- cancellare limit / pending orders ancora non eseguiti
+
+U_CANCEL_SIGNAL
+- annullare setup prima dell’attivazione
+
+U_INVALIDATE_SETUP
+- setup non più valido
+
+U_ADD_ENTRY
+- aggiungere nuova entry / nuova tranche
+
+U_UPDATE_ENTRY
+- cambiare entry pianificata
+
+U_DCA_ENTRY
+- mediare / aggiungere in ottica averaging
+
+
+U_REDUCE_RISK
+- ridurre esposizione senza chiusura totale
+
+U_REVERSE_POSITION
+- chiudere e girarsi opposite side
+
+U_IGNORE_PREVIOUS_UPDATE
+- ignorare istruzione precedente
+
+U_MANUAL_CLOSE
+- chiusura manuale non legata esplicitamente a stop o TP
+
+U_MARK_FILLED
+- conferma che l’ordine è entrato / filled
+
+U_MARK_NOT_FILLED
+- ordine non eseguito / missed
+
+U_ACTIVATION_CONFIRMED
+- setup attivato / trade live
+
+U_EXPIRATION
+- setup scaduto / non più valido per tempo
+
+U_WAIT
+- attendere, non entrare ancora
+
+U_REPORT_INTERMEDIATE_RESULT
+- update che riporta PnL / R non finale
+
+U_REPORT_FINAL_RESULT
+- update finale con esito complessivo
+
+U_TRAIL_STOP
+- trailing stop o indicazione di trailing
+
+U_PARTIAL_FILLED
+- ingresso solo parzialmente eseguito
+
+U_MOVE_TO_SAFE
+- espressioni tipo "safe trade", "secured", "risk free"
+
+Nota importante:
+----------------
+Intenti come:
+- U_TP_HIT
+- U_STOP_HIT
+- U_CLOSE_PARTIAL
+- U_CLOSE_FULL
+non vanno fusi tra loro.
+
+Perché:
+- U_TP_HIT = evento semantico
+- U_CLOSE_PARTIAL / U_CLOSE_FULL = decisione operativa
+- U_STOP_HIT = evento semantico di stop
+
+Esempio:
+"TP1 hit, close 50%, stop to entry"
+
+In questo caso ci sono 3 intenti:
+1) U_TP_HIT
+2) U_CLOSE_PARTIAL
+3) U_MOVE_STOP_TO_BE
+
+
+--------------------------------------------------
+B3. INTENTI DI INFO_ONLY
+--------------------------------------------------
+
+I_MARKET_COMMENTARY
+- commento generale sul mercato
+
+I_DIRECTIONAL_BIAS
+- view long / short / bearish / bullish
+
+I_RISK_WARNING
+- warning di rischio
+
+I_SCHEDULE_NOTE
+- "after 19:00", "later", "tomorrow"
+
+I_NO_ACTION
+- messaggio esplicitamente non operativo
+
+I_EDUCATIONAL
+- spiegazione / ragionamento
+
+I_STATUS_NOTE
+- stato generico senza comando
+
+I_NEWS_REACTION
+- commento a news o evento macro
+
+
+--------------------------------------------------
+B4. INTENTI DI RESULT_REPORT
+--------------------------------------------------
+
+R_FINAL_PROFIT
+- trade chiuso in profitto
+
+R_FINAL_LOSS
+- trade chiuso in perdita
+
+R_FINAL_BREAKEVEN
+- trade chiuso a zero / quasi zero
+
+R_PARTIAL_RESULT
+- risultato parziale
+
+R_R_MULTIPLE_REPORT
+- risultato espresso in R
+
+R_PNL_PERCENT_REPORT
+- risultato espresso in %
+
+R_PNL_ABSOLUTE_REPORT
+- risultato espresso in valore assoluto
+
+
+--------------------------------------------------
+B5. INTENTI DI ADMIN
+--------------------------------------------------
+
+A_CHANNEL_NOTICE
+- nota di canale / moderazione
+
+A_SCHEDULE
+- orari, pause, rientro
+
+A_SERVICE_MESSAGE
+- comunicazione servizio
+
+A_OFFTOPIC
+- messaggi non pertinenti al trading
+
+
+======================================================================
+C. AZIONI OPERATIVE
+======================================================================
+
+Le action devono essere poche, stabili, eseguibili.
+Non devono dipendere dal linguaggio del trader.
+
+--------------------------------------------------
+C1. ACTION CORE DI EXECUTION
+--------------------------------------------------
+
+
+
+ACT_AMEND_ENTRY_ORDER
+- modifica ordine di ingresso
+
+
+
+ACT_SET_TAKE_PROFITS
+- imposta target
+
+ACT_UPDATE_TAKE_PROFITS
+- aggiorna target
+
+ACT_ADD_TO_POSITION
+- aggiungi size alla posizione
+
+ACT_REDUCE_POSITION
+- riduci size senza chiusura totale formalizzata come close manuale
+
+ACT_REVERSE_POSITION
+- inverti lato posizione
+
+ACT_ENABLE_TRAILING_STOP
+- attiva trailing stop
+
+ACT_DISABLE_TRAILING_STOP
+- disattiva trailing stop
+
+ACT_NO_EXECUTION
+- nessuna azione su exchange
+
+
+--------------------------------------------------
+C2. ACTION DI STATO / DOMAIN <??????
+--------------------------------------------------
+
+Queste non vanno necessariamente all’exchange.
+Servono a mantenere stato interno corretto.
+
+ACT_MARK_SIGNAL_ACTIVE
+- segnale attivato / live
+
+ACT_MARK_SIGNAL_PENDING
+- segnale in attesa
+
+ACT_MARK_SIGNAL_CANCELLED
+- segnale annullato
+
+ACT_MARK_SIGNAL_INVALID
+- setup invalidato
+
+ACT_MARK_SIGNAL_EXPIRED
+- setup scaduto
+
+ACT_MARK_ORDER_FILLED
+- ordine eseguito
+
+ACT_MARK_ORDER_PARTIAL_FILL
+- ordine parzialmente eseguito
+
+ACT_MARK_ORDER_MISSED
+- ordine non eseguito / missed
+
+ACT_MARK_TP_HIT
+- target raggiunto
+
+ACT_MARK_STOP_HIT
+- stop colpito
+
+ACT_MARK_POSITION_CLOSED
+- posizione chiusa
+
+ACT_ATTACH_RESULT
+- allega risultato / pnl / R multipla
+
+ACT_ADD_NOTE
+- nota interna / annotazione
+
+ACT_IGNORE_MESSAGE
+- ignorare il messaggio
+
+ACT_REQUEST_MANUAL_REVIEW
+- inviare a revisione manuale
+
+
+======================================================================
+D. MAPPATURA INTENT -> ACTION
+======================================================================
+
+1) NEW SIGNAL
+------------
+INTENT:
+- NS_CREATE_SIGNAL
+ACTIONS:
+- ACT_MARK_SIGNAL_PENDING
+- ACT_PLACE_ENTRY_ORDER oppure ACT_OPEN_POSITION
+- ACT_SET_STOP_LOSS
+- ACT_SET_TAKE_PROFITS
+
+2) MOVE STOP
+------------
+INTENT:
+- U_MOVE_STOP
+ACTIONS:
+- ACT_MOVE_STOP_LOSS
+
+3) STOP TO BREAKEVEN
+--------------------
+INTENT:
+- U_MOVE_STOP_TO_BE
+ACTIONS:
+- ACT_MOVE_STOP_LOSS
+
+4) TP1 HIT
+----------
+INTENT:
+- U_TP_HIT
+ACTIONS:
+- ACT_MARK_TP_HIT
+- opzionale: nessuna execution automatica, oppure ACT_CLOSE_PARTIAL se il trader lo ordina esplicitamente
+
+5) CLOSE HALF
+-------------
+INTENT:
+- U_CLOSE_PARTIAL
+ACTIONS:
+- ACT_CLOSE_PARTIAL
+
+6) CLOSE ALL
+------------
+INTENT:
+- U_CLOSE_FULL oppure U_MANUAL_CLOSE
+ACTIONS:
+- ACT_CLOSE_FULL
+- ACT_MARK_POSITION_CLOSED
+
+7) STOP HIT
+-----------
+INTENT:
+- U_STOP_HIT
+ACTIONS:
+- ACT_MARK_STOP_HIT
+- ACT_CLOSE_FULL
+- ACT_MARK_POSITION_CLOSED
+
+8) CANCEL LIMITS
+----------------
+INTENT:
+- U_CANCEL_PENDING_ORDERS
+ACTIONS:
+- ACT_CANCEL_ALL_PENDING_ENTRIES
+
+9) SETUP INVALID
+----------------
+INTENT:
+- U_INVALIDATE_SETUP
+ACTIONS:
+- ACT_MARK_SIGNAL_INVALID
+- ACT_CANCEL_ALL_PENDING_ENTRIES
+
+10) ADD ENTRY
+-------------
+INTENT:
+- U_ADD_ENTRY / U_DCA_ENTRY
+ACTIONS:
+- ACT_ADD_TO_POSITION oppure ACT_PLACE_ENTRY_ORDER
+
+11) RESULT +0.8R
+----------------
+INTENT:
+- U_REPORT_FINAL_RESULT oppure R_R_MULTIPLE_REPORT
+ACTIONS:
+- ACT_ATTACH_RESULT
+- ACT_NO_EXECUTION
+
+
+======================================================================
+E. PROPOSTA CONTRATTO DATI
+======================================================================
+
+Formato consigliato per output parser:
+
+{
+  "macro_event": "UPDATE",
+  "intents": [
+    {
+      "intent": "U_TP_HIT",
+      "confidence": 0.91,
+      "params": {
+        "tp_index": 1,
+        "price": null
+      }
+    },
+    {
+      "intent": "U_CLOSE_PARTIAL",
+      "confidence": 0.95,
+      "params": {
+        "close_percent": 50
+      }
+    },
+    {
+      "intent": "U_MOVE_STOP_TO_BE",
+      "confidence": 0.89,
+      "params": {
+        "reference": "ENTRY"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "action": "ACT_MARK_TP_HIT",
+      "params": {
+        "tp_index": 1
+      }
+    },
+    {
+      "action": "ACT_CLOSE_PARTIAL",
+      "params": {
+        "close_percent": 50
+      }
+    },
+    {
+      "action": "ACT_MOVE_STOP_LOSS",
+      "params": {
+        "mode": "BREAKEVEN"
+      }
+    }
+  ]
+}
+
+Nota:
+-----
+È corretto avere più intents e più actions nello stesso messaggio.
+
+
+======================================================================
+F. PARAMETRI STANDARD CONSIGLIATI
+======================================================================
+
+Per gli INTENT:
+
+- symbol
+- direction
+- target_ref
+- tp_index
+- price
+- stop_price
+- entry_price
+- entry_prices
+- close_percent
+- qty
+- reason
+- result_r
+- result_percent
+- result_amount
+- note
+
+Per le ACTION:
+
+- order_id
+- signal_id
+- close_percent
+- qty
+- price
+- stop_price
+- tp_prices
+- mode
+- trailing_distance
+- source_intent
+
+
+======================================================================
+G. VERSIONE MINIMA PRATICA PER IL TUO PROGETTO
+======================================================================
+
+Se vuoi una prima versione davvero realistica e non troppo gonfia, io partirei così.
+
+MACRO EVENTI:
+- NEW_SIGNAL
+- UPDATE
+- INFO_ONLY
+- SETUP_INCOMPLETE
+- UNCLASSIFIED
+
+INTENTI NEW_SIGNAL:
+- NS_CREATE_SIGNAL
+
+INTENTI UPDATE:
+- U_MOVE_STOP
+- U_MOVE_STOP_TO_BE
+- U_TP_HIT
+- U_CLOSE_PARTIAL
+- U_CLOSE_FULL
+- U_STOP_HIT
+- U_CANCEL_PENDING_ORDERS
+- U_INVALIDATE_SETUP
+- U_ADD_ENTRY
+- U_MANUAL_CLOSE
+- U_MARK_FILLED
+- U_REPORT_FINAL_RESULT
+
+INTENTI INFO_ONLY:
+- I_MARKET_COMMENTARY
+- I_RISK_WARNING
+- I_NO_ACTION
+
+ACTION:
+- ACT_OPEN_POSITION
+- ACT_PLACE_ENTRY_ORDER
+- ACT_CANCEL_ALL_PENDING_ENTRIES
+- ACT_CLOSE_PARTIAL
+- ACT_CLOSE_FULL
+- ACT_MOVE_STOP_LOSS
+- ACT_SET_STOP_LOSS
+- ACT_SET_TAKE_PROFITS
+- ACT_MARK_TP_HIT
+- ACT_MARK_STOP_HIT
+- ACT_MARK_SIGNAL_INVALID
+- ACT_ATTACH_RESULT
+- ACT_IGNORE_MESSAGE
+- ACT_REQUEST_MANUAL_REVIEW
+
+Questa versione copre già la grandissima maggioranza dei casi reali.
+
+
+======================================================================
+H. REGOLE DI DESIGN IMPORTANTI
+======================================================================
+
+1. Non usare TAKE_PROFIT come action
+------------------------------------
+"Take profit" è linguaggio umano ambiguo.
+Lato action meglio usare:
+- ACT_CLOSE_PARTIAL
+- ACT_CLOSE_FULL
+- ACT_MARK_TP_HIT
+
+2. Non usare STOP_LOSS come action
+----------------------------------
+Meglio distinguere:
+- ACT_SET_STOP_LOSS
+- ACT_MOVE_STOP_LOSS
+- ACT_MARK_STOP_HIT
+
+3. Tenere separati evento e comando
+-----------------------------------
+Esempi:
+- "TP1 hit" = evento
+- "close 50%" = comando
+- "stop to entry" = comando
+
+4. Supportare multi-intent nello stesso messaggio
+-------------------------------------------------
+Molti update contengono 2-4 istruzioni.
+
+5. Tenere un campo source_text_span se possibile
+------------------------------------------------
+Per ogni intent utile salvare il frammento di testo da cui è stato estratto.
+
+6. Tenere sempre confidence per intent
+--------------------------------------
+Non solo per il messaggio intero, ma anche per i singoli intent.
+
+7. Non fare troppi intenti inutili
+----------------------------------
+Meglio 12 intenti robusti che 40 fragili.
+
+
+======================================================================
+I. CONCLUSIONE
+======================================================================
+
+Struttura consigliata finale:
+
+1) macro_event
+   classifica il messaggio
+
+2) intents[]
+   descrivono il significato semantico
+
+3) actions[]
+   descrivono cosa fare davvero
+
+Separazione consigliata:
+
+- macro_event = linguaggio di classificazione
+- intent = linguaggio di dominio
+- action = linguaggio di execution/stato
+
+Questa separazione è quella giusta per:
+- parser
+- planner
+- state machine
+- execution adapter
+- analytics
+- backtest
+- audit
+
+Fine.
