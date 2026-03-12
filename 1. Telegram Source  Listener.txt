@@ -1,0 +1,248 @@
+1. Telegram Source / Listener
+Cosa fa: Ascolta i messaggi che arrivano dal canale o dalle chat abilitate.
+
+Input:messaggio Telegram reale
+
+Output: pacchetto minimo con:
+	testo
+	message id
+	reply id
+	chat id
+	timestamp
+
+2. Raw Ingestion
+Cosa fa: Salva il messaggio nel database come raw message.
+
+Input: messaggio ricevuto dal listener
+
+Output:record in raw_messages
+	- source_chat_id
+	- telegram_message_id
+	- reply_to_message_id
+	- raw_text
+	- timestamp
+	- acquisition status
+
+Nota: Questo è il livello “conservo l’originale”.
+
+3. Deduplica
+Cosa fa: Evita di salvare due volte lo stesso messaggio.
+
+Input:raw message in arrivo
+
+Output:inserito oppure scartato come duplicato
+
+Nota:Serve per non sporcare il DB.
+
+4. Eligibility Filter
+Cosa fa:Decide se il messaggio può entrare nel flusso operativo oppure no.
+
+Input:
+	- raw text
+        - contesto minimo
+
+Output: messaggio eleggibile o no
+
+Esempi
+
+Esclude o ridimensiona:
+	- admin
+	- stats
+	- recap
+	- service
+	- messaggi non operativi
+
+Nota: Tutti i messaggi restano salvati nei raw, ma non tutti diventano candidati a parsing operativo.
+
+5. Trader Resolution
+Cosa fa
+
+Capisce quale trader rappresenta il messaggio.
+
+Input
+
+testo del messaggio
+
+eventuale parent reply
+
+eventualmente sorgente
+
+Output
+
+resolved_trader_id
+
+Metodi
+
+tag diretto nel testo
+
+eredità dal parent reply
+
+fallback da sorgente, solo se sicuro
+
+Nota importante
+
+Nel tuo caso:
+
+un canale può contenere più trader
+
+quindi la sorgente da sola non basta
+
+6. Trader Profile
+Cosa fa
+
+Applica le regole specifiche del trader risolto.
+
+Input
+
+trader risolto
+
+testo messaggio
+
+Output
+
+interpretazione più precisa del messaggio
+
+Esempio
+
+Per Trader A:
+
+riconosce meglio NEW_SIGNAL
+
+riconosce meglio UPDATE
+
+capisce il suo vocabolario
+
+estrae i suoi campi con più precisione
+
+Nota
+
+Qui entra il vocabolario trader-specifico.
+
+7. Intent Classification
+Cosa fa
+
+Classifica il messaggio in una categoria logica.
+
+Output principali
+
+NEW_SIGNAL
+
+SETUP_INCOMPLETE
+
+UPDATE
+
+INFO_ONLY
+
+UNCLASSIFIED
+
+Nota
+
+Questo è uno dei nodi più importanti, perché decide la “famiglia” del messaggio.
+
+8. Field Extraction
+Cosa fa
+
+Estrae i campi operativi dal testo.
+
+Esempi di campi
+
+symbol
+
+direction
+
+entry
+
+averaging
+
+stop
+
+target
+
+risk hint
+
+invalidation note
+
+Nota
+
+Qui non si decide ancora il trade finale.
+Si leggono i dati grezzi del messaggio.
+
+9. Linkage Resolution
+Cosa fa
+
+Capisce a quale messaggio/trade precedente si riferisce un update.
+
+Metodi forti
+
+reply
+
+link Telegram
+
+riferimento esplicito
+
+Output
+
+linkage confermato / debole / assente
+
+Nota
+
+Per update brevi è fondamentale.
+
+10. Validation
+Cosa fa
+
+Decide se il messaggio è abbastanza completo e affidabile da essere operativo.
+
+Esempi
+Per NEW_SIGNAL
+
+Serve:
+
+symbol
+
+direction
+
+entry
+
+stop
+
+almeno un target
+
+Per UPDATE
+
+Serve:
+
+trader risolto
+
+linkage forte o comunque affidabile
+
+Nota
+
+Qui il sistema decide se il messaggio è solo informativo o davvero usabile.
+
+11. Parse Result Persistence
+Cosa fa
+
+Salva il risultato dell’interpretazione del parser.
+
+Output
+
+record in parse_results
+
+Contiene
+
+eligibility
+
+trader risolto
+
+tipo messaggio
+
+campi estratti
+
+linkage
+
+executable sì/no
+
+Nota
+
+Questo è il livello “cosa abbiamo capito dal messaggio”.

@@ -1,0 +1,222 @@
+EVENTI_INTENTI_AZIONI
+========================================
+
+1) macro eventi del messaggio
+2) intenti semantici
+3) azioni operative
+
+Principio chiave
+----------------
+Separare sempre 3 livelli:
+
+LIVELLO 1: MACRO EVENTO
+- classifica il messaggio nel suo ruolo generale
+
+LIVELLO 2: INTENT
+- descrive cosa il trader intende semanticamente
+
+LIVELLO 3: ACTION
+- descrive cosa il sistema deve fare davvero lato execution / stato
+
+Formula:
+
+MESSAGE -> MACRO_EVENT
+MACRO_EVENT -> INTENT
+INTENT -> ACTION(S)
+
+
+======================================================================
+A. MACRO EVENTI
+======================================================================
+
+Proposta elenco completo:
+
+1. NEW_SIGNAL // Nuovo setup di trade.
+
+2. UPDATE // Aggiornamento operativo su setup/trade esistente.
+
+3. INFO_ONLY // Messaggio informativo, commento, market view, warning, note operative non eseguibili.
+		
+5. SETUP_INCOMPLETE // Sembra un segnale ma mancano dati fondamentali.
+
+6. UNCLASSIFIED // Non classificabile in modo affidabile.
+
+Un evento può contenere diversi intenti e azioni
+
+======================================================================
+B. MAPPATURA INTENT -> ACTION
+======================================================================
+
+----------------------------------------------------------------------
+1) NEW_SIGNAL
+----------------------------------------------------------------------
+
+INTENT:
+- NS_CREATE_SIGNAL 	 // nuovo segnale completo
+- REENTRY_SIGNAL	 // nuovo ingresso dopo chiusura precedente o re-entry dichiarata
+ACTIONS:
+- ACT_OPEN_POSITION 	  // apri nuova posizione al mercato
+- ACT_PLACE_ENTRY_ORDER   // piazza ordine di ingresso
+- ACT_SET_STOP_LOSS
+- ACT_SET_TAKE_PROFITS
+
+----------------------------------------------------------------------
+2) UPDATE
+----------------------------------------------------------------------
+
+
+2.1 "STOP_LOSS"
+---------------
+
+INTENT:
+- U_MOVE_STOP_TO_BE 	// stop a breakeven / entry
+- U_MOVE_STOP_TO_PROFIT // stop in profitto / lock profit
+ 
+ACTIONS:
+- ACT_MOVE_STOP_LOSS // - aggiorna stop loss a nuovo livello
+
+2.2 "CLOSE_POSITION"
+--------------------
+ 
+INTENT:
+- U_CLOSE_PARTIAL        // chiudere parte posizione
+- U_CLOSE_FULL           //  chiudere tutta la posizione
+- U_CLOSE_ALL_POSITINS   //  chiudere tutta la posizione
+
+ACTIONS:
+- ACT_CLOSE_PARTIAL 	// - chiudi parte posizione aperta
+- ACT_CLOSE_FULL 	// - chiudi tutta la posizione
+- ACT_CLOSE_ALL_POSITINS // - chiudi tutti le posizioni aperti del traider
+
+
+2.3 "CANCELL_ORDERS"
+--------------------
+ 
+INTENT:
+U_CANCEL_PENDING_ORDERS // cancellare limit / pending orders ancora non eseguiti
+
+ACTIONS:
+- ACT_CANCEL_ENTRY_ORDER // cancella specifico ordine di ingresso
+- ACT_CANCEL_ALL_PENDING_ENTRIES // - cancella tutti i pending di ingresso del traider
+
+
+----------------------------------------------------------------------
+3) INFO_ONLY // Messaggio informativo, commento, market view, warning, note operative non eseguibili.
+----------------------------------------------------------------------
+
+
+
+
+======================================================================
+C. ACTION DI STATO / DOMAIN (SERVE?????)
+======================================================================
+
+Queste non vanno necessariamente all’exchange.
+Servono a mantenere stato interno corretto.
+
+ACT_MARK_SIGNAL_ACTIVE
+- segnale attivato / live
+
+ACT_MARK_SIGNAL_PENDING
+- segnale in attesa
+
+ACT_MARK_SIGNAL_CANCELLED
+- segnale annullato
+
+ACT_MARK_SIGNAL_INVALID
+- setup invalidato
+
+ACT_MARK_SIGNAL_EXPIRED
+- setup scaduto
+
+ACT_MARK_ORDER_FILLED
+- ordine eseguito
+
+ACT_MARK_ORDER_PARTIAL_FILL
+- ordine parzialmente eseguito
+
+ACT_MARK_ORDER_MISSED
+- ordine non eseguito / missed
+
+ACT_MARK_TP_HIT
+- target raggiunto
+
+ACT_MARK_STOP_HIT
+- stop colpito
+
+ACT_MARK_POSITION_CLOSED
+- posizione chiusa
+
+ACT_ATTACH_RESULT
+- allega risultato / pnl / R multipla
+
+ACT_ADD_NOTE
+- nota interna / annotazione
+
+ACT_IGNORE_MESSAGE
+- ignorare il messaggio
+
+ACT_REQUEST_MANUAL_REVIEW
+- inviare a revisione manuale
+
+
+======================================================================
+G. VERSIONE MINIMA PRATICA PER IL TUO PROGETTO
+======================================================================
+
+Se vuoi una prima versione davvero realistica e non troppo gonfia, io partirei così.
+
+MACRO EVENTI:
+- NEW_SIGNAL
+- UPDATE
+- INFO_ONLY
+- SETUP_INCOMPLETE
+- UNCLASSIFIED
+
+INTENTI NEW_SIGNAL:
+- NS_CREATE_SIGNAL
+
+INTENTI UPDATE:
+- U_MOVE_STOP
+- U_MOVE_STOP_TO_BE
+- U_TP_HIT
+- U_CLOSE_PARTIAL
+- U_CLOSE_FULL
+- U_STOP_HIT
+- U_CANCEL_PENDING_ORDERS
+- U_INVALIDATE_SETUP
+- U_ADD_ENTRY
+- U_MANUAL_CLOSE
+- U_MARK_FILLED
+- U_REPORT_FINAL_RESULT
+
+INTENTI INFO_ONLY:
+- I_MARKET_COMMENTARY
+- I_RISK_WARNING
+- I_NO_ACTION
+
+ACTION:
+- ACT_OPEN_POSITION
+- ACT_PLACE_ENTRY_ORDER
+- ACT_CANCEL_ALL_PENDING_ENTRIES
+- ACT_CLOSE_PARTIAL
+- ACT_CLOSE_FULL
+- ACT_MOVE_STOP_LOSS
+- ACT_SET_STOP_LOSS
+- ACT_SET_TAKE_PROFITS
+- ACT_MARK_TP_HIT
+- ACT_MARK_STOP_HIT
+- ACT_MARK_SIGNAL_INVALID
+- ACT_ATTACH_RESULT
+- ACT_IGNORE_MESSAGE
+- ACT_REQUEST_MANUAL_REVIEW
+
+Questa versione copre già la grandissima maggioranza dei casi reali.
+
+
+
+
+
+
+
+
