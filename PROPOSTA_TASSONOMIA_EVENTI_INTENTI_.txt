@@ -112,9 +112,6 @@ U_CLOSE_FULL
 U_CANCEL_PENDING_ORDERS
 - cancellare limit / pending orders ancora non eseguiti
 
-U_CANCEL_SIGNAL
-- annullare setup prima dell’attivazione
-
 U_INVALIDATE_SETUP
 - setup non più valido
 
@@ -128,8 +125,6 @@ U_DCA_ENTRY
 - mediare / aggiungere in ottica averaging
 
 
-U_REDUCE_RISK
-- ridurre esposizione senza chiusura totale
 
 U_REVERSE_POSITION
 - chiudere e girarsi opposite side
